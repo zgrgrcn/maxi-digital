@@ -1,5 +1,5 @@
 // Import required AWS SDK clients and commands for Node.js
-import { GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { ddbDocClient } from "./libs/ddbDocClient.js";
 import axios from "axios";
 
@@ -7,7 +7,6 @@ const coinsTable = "coins";
 
 export const handler = async (event) => {
   console.log("event", event);
-  let response = {};
   try {
     return {
       statusCode: 200,
@@ -29,14 +28,11 @@ export const run = async () => {
   };
   try {
     response.statusCode = 200;
-    // response.body = await listCoins();
     response.body = JSON.stringify(await listCoins());
-    console.log("body succesful");
   } catch (err) {
     response.statusCode = 500;
     response.body = err.message;
   } finally {
-    console.log("finally");
     console.log(response);
   }
 };
@@ -47,20 +43,18 @@ export const run = async () => {
 const listCoins = async () => {
   const coins = (await axios.get("https://api.coingecko.com/api/v3/coins/list"))
     .data;
-  console.log("coingecko successful");
 
   const currentDate = new Date().toISOString();
 
-  console.log("save start");
   let params = {
     TableName: coinsTable,
     Item: {
       date: currentDate,
-      coins: coins.slice(0, 1000),//Item size has exceeded the maximum allowed size
+      coins: coins.slice(0, 1000), //Item size has exceeded the maximum allowed size
     },
   };
   await ddbDocClient.send(new PutCommand(params));
-  
+
   //Item size to update has exceeded the maximum allowed size
   // await ddbDocClient.send(
   //   new UpdateCommand({
